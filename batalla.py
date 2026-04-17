@@ -1,22 +1,22 @@
-from personaje import Personaje, CLASES
+from personaje import Personaje
 from enemigo import Enemigo
 
 
 def mostrar_menu(personaje):
-    """Muestra el menú de acciones y devuelve la elección (1-3)."""
     hechizo_info = (
-        f"{personaje.hechizo_nombre} ({personaje.hechizo_usos_restantes} uso/s)"
-        if personaje.hechizo_usos_restantes > 0
-        else f"{personaje.hechizo_nombre} (sin usos)"
+        f"{personaje.hechizo_nombre} "
+        f"({personaje.hechizo_usos_restantes}u / {personaje.mana}mp)"
+        if personaje.hechizo_usos_restantes > 0 and personaje.mana >= personaje.hechizo_costo_mana
+        else f"{personaje.hechizo_nombre} (no disponible)"
     )
     print()
-    print("  ┌─────────────────────────────────────┐")
-    print("  │           ¿Qué hacés?               │")
-    print("  ├─────────────────────────────────────┤")
-    print("  │  [1] ⚔️   Atacar                    │")
-    print("  │  [2] 💨  Esquivar  (20 % de éxito)  │")
-    print(f"  │  [3] ✨  Hechizo: {hechizo_info:<22}│")
-    print("  └─────────────────────────────────────┘")
+    print("  ┌─────────────────────────────────────────┐")
+    print("  │            ¿Qué hacés?                  │")
+    print("  ├─────────────────────────────────────────┤")
+    print("  │  [1] ⚔️   Atacar                        │")
+    print("  │  [2] 💨  Esquivar  (20 % de éxito)      │")
+    print(f"  │  [3] ✨  Hechizo: {hechizo_info:<24}│")
+    print("  └─────────────────────────────────────────┘")
 
     while True:
         opcion = input("  > Ingresá 1, 2 o 3: ").strip()
@@ -34,63 +34,54 @@ class Batalla:
         self.activa = True
         self.ganador = None
 
-    # ------------------------------------------------------------------
     def ejecutar(self):
-        print(f"\n{'='*50}")
-        print("           ¡BATALLA INICIADA!")
-        print(f"  {self.personaje.nombre} ({self.personaje.clase.capitalize()}) "
-              f"vs {self.enemigo.nombre} Nv.{self.enemigo.nivel}")
-        print(f"{'='*50}\n")
+        print(f"\n{'='*52}")
+        print("              ¡BATALLA INICIADA!")
+        print(f"  {self.personaje.nombre} (Nv.{self.personaje.nivel} {self.personaje.clase.capitalize()})")
+        print(f"  vs  {self.enemigo.nombre} (Nv.{self.enemigo.nivel})")
+        print(f"{'='*52}\n")
 
         while self.activa:
             self.turno += 1
-            print(f"── TURNO {self.turno} " + "─" * 38)
+            print(f"── TURNO {self.turno} " + "─" * 40)
             self._mostrar_estado()
 
-            # ── TURNO DEL JUGADOR ──────────────────────────────────────
             opcion = mostrar_menu(self.personaje)
             print()
-
-            esquivando = False   # ¿el jugador eligió esquivar?
+            esquivando = False
 
             if opcion == 1:
                 self.personaje.atacar(self.enemigo)
-                self._registrar(f"{self.personaje.nombre} ataca. "
-                                f"{self.enemigo.nombre} tiene {self.enemigo.vida} HP.")
+                self._reg(f"{self.personaje.nombre} ataca. "
+                          f"{self.enemigo.nombre}: {self.enemigo.vida} HP.")
 
             elif opcion == 2:
                 esquivando = self.personaje.esquivar()
-                self._registrar(
-                    f"{self.personaje.nombre} intenta esquivar "
-                    f"({'éxito' if esquivando else 'falla'})."
-                )
+                self._reg(f"{self.personaje.nombre} esquiva "
+                          f"({'éxito' if esquivando else 'falla'}).")
 
             elif opcion == 3:
-                resultado = self.personaje.lanzar_hechizo(self.enemigo)
-                if not resultado:
-                    # Sin usos: fuerza ataque normal
+                ok = self.personaje.lanzar_hechizo(self.enemigo)
+                if not ok:
                     print("  (Se realiza un ataque normal en su lugar.)")
                     self.personaje.atacar(self.enemigo)
-                self._registrar(f"{self.personaje.nombre} usa hechizo. "
-                                f"{self.enemigo.nombre} tiene {self.enemigo.vida} HP.")
+                self._reg(f"{self.personaje.nombre} usa hechizo. "
+                          f"{self.enemigo.nombre}: {self.enemigo.vida} HP.")
 
-            # Verificar si el enemigo cayó
             if self.enemigo.vida <= 0:
                 self.ganador = "personaje"
                 self.activa = False
                 break
 
-            # ── TURNO DEL ENEMIGO ──────────────────────────────────────
             print()
             if esquivando:
                 print(f"  🛡️  {self.personaje.nombre} esquivó el ataque de {self.enemigo.nombre}.")
-                self._registrar(f"{self.enemigo.nombre} ataca pero {self.personaje.nombre} esquiva.")
+                self._reg(f"{self.enemigo.nombre} ataca pero {self.personaje.nombre} esquiva.")
             else:
                 self.enemigo.atacar(self.personaje)
-                self._registrar(f"{self.enemigo.nombre} ataca. "
-                                f"{self.personaje.nombre} tiene {self.personaje.vida} HP.")
+                self._reg(f"{self.enemigo.nombre} ataca. "
+                          f"{self.personaje.nombre}: {self.personaje.vida} HP.")
 
-            # Verificar si el personaje cayó
             if self.personaje.vida <= 0:
                 self.ganador = "enemigo"
                 self.activa = False
@@ -100,32 +91,36 @@ class Batalla:
 
         self._mostrar_resultado()
 
+        # Otorgar experiencia si el jugador ganó
+        if self.ganador == "personaje":
+            self.personaje.ganar_experiencia(self.enemigo.exp_recompensa)
+
     # ------------------------------------------------------------------
     def _mostrar_estado(self):
-        p = self.personaje
-        e = self.enemigo
-        barra_p = self._barra_vida(p.vida, p.vida_maxima)
-        barra_e = self._barra_vida(e.vida, e.vida_maxima)
-        print(f"  {p.nombre:<16} {barra_p}  {p.vida}/{p.vida_maxima} HP")
-        print(f"  {e.nombre:<16} {barra_e}  {e.vida}/{e.vida_maxima} HP")
+        p, e = self.personaje, self.enemigo
+        print(f"  {p.nombre:<18} {self._barra(p.vida, p.vida_maxima)}  "
+              f"{p.vida}/{p.vida_maxima} HP  💧{p.mana}/{p.mana_maximo}")
+        print(f"  {e.nombre:<18} {self._barra(e.vida, e.vida_maxima)}  "
+              f"{e.vida}/{e.vida_maxima} HP")
 
     @staticmethod
-    def _barra_vida(vida, vida_maxima, largo=12):
-        llenos = int((vida / vida_maxima) * largo)
+    def _barra(vida, maxima, largo=10):
+        llenos = int((max(0, vida) / maxima) * largo)
         return "❤️ " + "█" * llenos + "░" * (largo - llenos)
 
-    def _registrar(self, evento):
-        self.registro.append(f"Turno {self.turno}: {evento}")
+    def _reg(self, evento):
+        self.registro.append(f"T{self.turno}: {evento}")
 
     def _mostrar_resultado(self):
-        print(f"\n{'='*50}")
+        print(f"\n{'='*52}")
         if self.ganador == "personaje":
             print(f"  🎉 ¡{self.personaje.nombre} GANA LA BATALLA!")
-            print(f"  Vida restante: {self.personaje.vida}/{self.personaje.vida_maxima}")
+            print(f"  Vida restante: {self.personaje.vida}/{self.personaje.vida_maxima} HP")
+            print(f"  Recompensa: {self.enemigo.exp_recompensa} XP")
         else:
             print(f"  💀 ¡{self.personaje.nombre} FUE DERROTADO!")
             print(f"  {self.enemigo.nombre} fue demasiado fuerte...")
-        print(f"{'='*50}\n")
+        print(f"{'='*52}\n")
 
     def mostrar_historial(self):
         print("\n--- HISTORIAL ---")
