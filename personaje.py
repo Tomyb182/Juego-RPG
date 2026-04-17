@@ -38,8 +38,8 @@ CLASES = {
         "descripcion": "Se cura durante el combate y tiene buena defensa.",
         "ataque": 12,
         "defensa": 12,
-        "vida_maxima": 110,
-        "mana_maximo": 35,
+        "vida_maxima": 120,
+        "mana_maximo": 40,
         "hechizo_nombre": "Luz Sagrada",
         "hechizo_desc": "Te cura entre 20 y 35 puntos de vida.",
         "hechizo_costo_mana": 10,
@@ -104,7 +104,7 @@ class Personaje:
         print("  │  [1] ⚔️   Ataque    (+5)             │")
         print("  │  [2] 🛡️   Defensa   (+4)             │")
         print("  │  [3] ❤️   Vida máx  (+20)            │")
-        print("  │  [4] 💧  Maná máx  (+15)            │")
+        print("  │  [4] 💧  Maná máx  (+15)             │")
         print("  └──────────────────────────────────────┘")
 
         while True:
@@ -117,8 +117,8 @@ class Personaje:
             self.ataque += 5
             print(f"\n  ✅ ¡Ataque aumentado! ATK: {self.ataque - 5} → {self.ataque}")
         elif opcion == "2":
-            self.defensa += 4
-            print(f"\n  ✅ ¡Defensa aumentada! DEF: {self.defensa - 4} → {self.defensa}")
+            self.defensa += 6
+            print(f"\n  ✅ ¡Defensa aumentada! DEF: {self.defensa - 6} → {self.defensa}")
         elif opcion == "3":
             self.vida_maxima += 20
             self.vida = min(self.vida + 20, self.vida_maxima)
@@ -151,11 +151,11 @@ class Personaje:
 
     # ------------------------------------------------------------------
     def esquivar(self):
-        exito = random.randint(1, 100) <= 20
+        exito = random.randint(1, 100) <= 50
         if exito:
             print(f"  💨 ¡{self.nombre} esquiva con éxito! No recibirá daño este turno.")
         else:
-            print(f"  😬 {self.nombre} intenta esquivar... pero falla.")
+            print(f"  😬 {self.nombre} intenta esquivar... pero no.")
         return exito
 
     # ------------------------------------------------------------------
